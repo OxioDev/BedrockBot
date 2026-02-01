@@ -19,14 +19,18 @@ function sendChat(message) {
 function startBot() {
   console.log('⏳ Starting bot...')
 
-  client = createClient({
-    host: process.env.SERVER_IP,
-    port: Number(process.env.SERVER_PORT || 19132),
-    username: process.env.MC_EMAIL,
-    password: process.env.MC_PASSWORD,
-    authTitle: 'Minecraft',
-    skipPing: true
-  })
+ client = createClient({
+  host: process.env.SERVER_IP,
+  port: Number(process.env.SERVER_PORT || 19132),
+
+  username: process.env.MC_EMAIL,
+  password: process.env.MC_PASSWORD,
+
+  authTitle: 'Minecraft',
+  flow: 'msal',        // ✅ REQUIRED
+  skipPing: true       // (Render workaround)
+})
+
 
   client.on('join', () => {
     console.log('✅ Bot joined server')
