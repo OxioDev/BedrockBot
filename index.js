@@ -15,14 +15,15 @@ function sendChat(msg) {
   })
 }
 
-function startBot() {
-  client = createClient({
-    host: process.env.SERVER_IP,
-    port: Number(process.env.SERVER_PORT || 19132),
-    username: process.env.MC_EMAIL,
-    password: process.env.MC_PASSWORD,
-    authTitle: 'Minecraft'
-  })
+client = createClient({
+  host: process.env.SERVER_IP,
+  port: Number(process.env.SERVER_PORT || 19132),
+  username: process.env.MC_EMAIL,
+  password: process.env.MC_PASSWORD,
+  authTitle: 'Minecraft',
+  skipPing: true
+})
+
 
   client.on('join', () => {
     console.log('✅ Bot online')
