@@ -4,34 +4,36 @@ import { createClient } from 'bedrock-protocol'
 let client
 let autoInterval
 
-function sendChat(msg) {
+function sendChat(message) {
+  if (!client) return
   client.queue('text', {
     type: 'chat',
     needs_translation: false,
     source_name: '',
-    message: msg,
+    message,
     xuid: '',
     platform_chat_id: ''
   })
 }
 
-client = createClient({
-  host: process.env.SERVER_IP,
-  port: Number(process.env.SERVER_PORT || 19132),
-  username: process.env.MC_EMAIL,
-  password: process.env.MC_PASSWORD,
-  authTitle: 'Minecraft',
-  skipPing: true
-})
+function startBot() {
+  console.log('⏳ Starting bot...')
 
+  client = createClient({
+    host: process.env.SERVER_IP,
+    port: Number(process.env.SERVER_PORT || 19132),
+    username: process.env.MC_EMAIL,
+    password: process.env.MC_PASSWORD,
+    authTitle: 'Minecraft',
+    skipPing: true
+  })
 
   client.on('join', () => {
-    console.log('✅ Bot online')
+    console.log('✅ Bot joined server')
     sendChat('🤖 Auto-text bot online!')
 
-    // Start auto message interval
     autoInterval = setInterval(() => {
-      sendChat(process.env.AUTOTEXT)
+      sendChat(process.env.AUTOTEXT || 'Hello from bot!')
     }, Number(process.env.INTERVAL) || 60000)
   })
 
@@ -39,7 +41,6 @@ client = createClient({
     const msg = packet.message
     const sender = packet.source_name
 
-    // Owner-only commands in chat
     if (!sender || sender !== process.env.OWNER_NAME) return
 
     if (msg === '!stop') {
@@ -48,31 +49,39 @@ client = createClient({
     }
 
     if (msg === '!start') {
+      clearInterval(autoInterval)
       autoInterval = setInterval(() => {
-        sendChat(process.env.AUTOTEXT)
+        sendChat(process.env.AUTOTEXT || 'Hello from bot!')
       }, Number(process.env.INTERVAL) || 60000)
       sendChat('▶ Auto-text started')
     }
 
     if (msg.startsWith('!settext ')) {
       process.env.AUTOTEXT = msg.slice(9)
-      sendChat(`✏ Auto-text changed to: ${process.env.AUTOTEXT}`)
+      sendChat(`✏ Text set to: ${process.env.AUTOTEXT}`)
     }
 
     if (msg.startsWith('!setinterval ')) {
-      clearInterval(autoInterval)
-      process.env.INTERVAL = msg.slice(13)
-      autoInterval = setInterval(() => {
-        sendChat(process.env.AUTOTEXT)
-      }, Number(process.env.INTERVAL) || 60000)
-      sendChat(`⏱ Auto-text interval set to ${process.env.INTERVAL}ms`)
+      const newInterval = Number(msg.slice(13))
+      if (!isNaN(newInterval)) {
+        clearInterval(autoInterval)
+        process.env.INTERVAL = newInterval
+        autoInterval = setInterval(() => {
+          sendChat(process.env.AUTOTEXT)
+        }, newInterval)
+        sendChat(`⏱ Interval set to ${newInterval}ms`)
+      }
     }
   })
 
   client.on('disconnect', () => {
-    console.log('❌ Disconnected, reconnecting...')
+    console.log('❌ Disconnected, restarting in 5s')
     clearInterval(autoInterval)
     setTimeout(startBot, 5000)
+  })
+
+  client.on('error', (err) => {
+    console.error('⚠ Bot error:', err.message)
   })
 }
 
